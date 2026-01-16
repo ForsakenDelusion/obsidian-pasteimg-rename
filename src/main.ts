@@ -170,7 +170,7 @@ export default class PasteImageRenamePlugin extends Plugin {
 		}
 
 		// in case fileManager.renameFile may not update the internal link in the active file,
-		// we manually replace the current line by manipulating the editor
+		// we manually replace all occurrences in the document by manipulating the editor
 
 		const newLinkText = this.app.fileManager.generateMarkdownLink(file, sourcePath)
 		debugLog('replace text', linkText, newLinkText)
@@ -181,20 +181,41 @@ export default class PasteImageRenamePlugin extends Plugin {
 			return
 		}
 
-		const cursor = editor.getCursor()
-		const line = editor.getLine(cursor.line)
-		const replacedLine = line.replace(linkText, newLinkText)
-		debugLog('current line -> replaced line', line, replacedLine)
-		// console.log('editor context', cursor, )
-		editor.transaction({
-			changes: [
-				{
-					from: {...cursor, ch: 0},
-					to: {...cursor, ch: line.length},
-					text: replacedLine,
-				}
-			]
-		})
+		// Search and replace all occurrences in the entire document
+		// Use transaction API to preserve cursor position and undo history
+		const content = editor.getValue()
+		const escapedLinkText = escapeRegExp(linkText)
+		const linkRegex = new RegExp(escapedLinkText, 'g')
+
+		// Find all matches and their positions
+		const matches: { from: number; to: number }[] = []
+		let match
+		while ((match = linkRegex.exec(content)) !== null) {
+			matches.push({
+				from: match.index,
+				to: match.index + match[0].length
+			})
+		}
+
+		if (matches.length > 0) {
+			debugLog(`replacing ${matches.length} occurrence(s) in document`)
+			// Save cursor position
+			const cursor = editor.getCursor()
+
+			// Build transaction changes (reverse order to maintain positions)
+			const changes = matches.reverse().map(pos => ({
+				from: editor.offsetToPos(pos.from),
+				to: editor.offsetToPos(pos.to),
+				text: newLinkText
+			}))
+
+			editor.transaction({ changes })
+
+			// Restore cursor position
+			editor.setCursor(cursor)
+		} else {
+			debugLog('no replacement needed, linkText not found in document')
+		}
 
 		if (!this.settings.disableRenameNotice) {
 			new Notice(`Renamed ${originName} to ${newName}`)
