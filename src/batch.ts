@@ -3,6 +3,7 @@ import { Modal, TFile, App, Setting } from 'obsidian';
 import {
   path, createElementTree, debugLog, lockInputMethodComposition,
 } from './utils';
+import { t } from './i18n';
 
 interface State {
 	namePattern: string
@@ -41,11 +42,11 @@ export class ImageBatchRenameModal extends Modal {
 	onOpen() {
 		this.containerEl.addClass('image-rename-modal')
 		const { contentEl, titleEl } = this;
-		titleEl.setText('Batch rename embeded files')
+		titleEl.setText(t('modal.batch.title'))
 
 		const namePatternSetting = new Setting(contentEl)
-			.setName('Name pattern')
-			.setDesc('Please input the name pattern to match files (regex)')
+			.setName(t('modal.batch.namePattern'))
+			.setDesc(t('modal.batch.namePatternDesc'))
 			.addText(text => text
 				.setValue(this.state.namePattern)
 				.onChange(async (value) => {
@@ -59,7 +60,7 @@ export class ImageBatchRenameModal extends Modal {
 			if (e.key === 'Enter' && !npInputState.lock) {
 				e.preventDefault()
 				if (!this.state.namePattern) {
-					errorEl.innerText = 'Error: "Name pattern" could not be empty'
+					errorEl.innerText = t('modal.batch.errorEmpty')
 					errorEl.style.display = 'block'
 					return
 				}
@@ -68,8 +69,8 @@ export class ImageBatchRenameModal extends Modal {
 		})
 
 		const extPatternSetting = new Setting(contentEl)
-			.setName('Extension pattern')
-			.setDesc('Please input the extension pattern to match files (regex)')
+			.setName(t('modal.batch.extPattern'))
+			.setDesc(t('modal.batch.extPatternDesc'))
 			.addText(text => text
 				.setValue(this.state.extPattern)
 				.onChange(async (value) => {
@@ -85,8 +86,8 @@ export class ImageBatchRenameModal extends Modal {
 		})
 
 		const nameReplaceSetting = new Setting(contentEl)
-			.setName('Name replace')
-			.setDesc('Please input the string to replace the matched name (use $1, $2 for regex groups)')
+			.setName(t('modal.batch.nameReplace'))
+			.setDesc(t('modal.batch.nameReplaceDesc'))
 			.addText(text => text
 				.setValue(this.state.nameReplace)
 				.onChange(async (value) => {
@@ -118,11 +119,11 @@ export class ImageBatchRenameModal extends Modal {
 							children: [
 								{
 									tag: 'td',
-									text: 'Original path',
+									text: t('modal.batch.tableOriginal'),
 								},
 								{
 									tag: 'td',
-									text: 'Renamed Name',
+									text: t('modal.batch.tableRenamed'),
 								}
 							]
 						}
@@ -145,13 +146,13 @@ export class ImageBatchRenameModal extends Modal {
 		new Setting(contentEl)
 			.addButton(button => {
 				button
-					.setButtonText('Rename all')
+					.setButtonText(t('modal.batch.renameAll'))
 					.setClass('mod-cta')
 					.onClick(() => {
 						new ConfirmModal(
 							this.app,
-							'Confirm rename all',
-							`Are you sure? This will rename all the ${this.state.renameTasks.length} images matched the pattern.`,
+							t('modal.batch.confirmTitle'),
+							t('modal.batch.confirmMessage', { count: this.state.renameTasks.length }),
 							() => {
 								this.renameAll()
 								this.close()
@@ -161,7 +162,7 @@ export class ImageBatchRenameModal extends Modal {
 			})
 			.addButton(button => {
 				button
-					.setButtonText('Cancel')
+					.setButtonText(t('common.cancel'))
 					.onClick(() => { this.close() })
 			})
 	}
@@ -285,7 +286,7 @@ class ConfirmModal extends Modal {
 		new Setting(contentEl)
 			.addButton(button => {
 				button
-					.setButtonText('Yes')
+					.setButtonText(t('common.yes'))
 					.setClass('mod-warning')
 					.onClick(() => {
 						this.onConfirm()
@@ -294,7 +295,7 @@ class ConfirmModal extends Modal {
 			})
 			.addButton(button => {
 				button
-					.setButtonText('No')
+					.setButtonText(t('common.no'))
 					.onClick(() => { this.close() })
 			})
 	}
